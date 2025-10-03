@@ -1,0 +1,1001 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "User Service API",
+    "description": "Documentación de la API de Usuarios",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Servicio-Usuarios"
+    }
+  ],
+  "security": [
+    {
+      "Bearer Authentication": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Usuarios",
+      "description": "Endpoints para gestión de usuarios (CRUD, paginación, eliminación lógica)"
+    },
+    {
+      "name": "Autenticación",
+      "description": "Endpoints para login, OTP y recuperación de contraseña"
+    }
+  ],
+  "paths": {
+    "/api/v1/users/{id}": {
+      "put": {
+        "tags": ["Usuarios"],
+        "summary": "Actualizar usuario",
+        "description": "Modifica los datos de un usuario existente. Solo los campos enviados en la solicitud serán actualizados.",
+        "operationId": "updateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identificador único del usuario",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 101
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": { "description": "Usuario actualizado exitosamente", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserResponse" } } } },
+        "400": {
+            "description": "Errores de validación en los datos de entrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                  }
+                },
+                "examples": {
+                  "erroresValidacion": {
+                    "summary": "Errores de validación de email y nombre",
+                    "value": [
+                      {
+                        "field": "email",
+                        "error": "El email debe tener un formato válido"
+                      },
+                      {
+                        "field": "name",
+                        "error": "El nombre debe tener al menos 5 caracteres"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/UserNotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableError"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Usuarios"],
+        "summary": "Eliminar usuario",
+        "description": "Elimina lógicamente un usuario del sistema. No borra físicamente los datos.",
+        "operationId": "deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identificador único del usuario",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 101
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Usuario eliminado exitosamente"
+          },
+          "404": {
+            "$ref": "#/components/responses/UserNotFoundError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableError"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}": {
+      "get": {
+        "tags": ["Usuarios"],
+        "summary": "Consultar usuario por ID",
+        "description": "Obtiene los datos de un usuario específico mediante su identificador único.",
+        "operationId": "getUser",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "Identificador único del usuario",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 101
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuario encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/UserNotFoundError"
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": ["Usuarios"],
+        "summary": "Obtener lista paginada de usuarios",
+        "description": "Consulta los usuarios del sistema con paginación. La numeración de páginas comienza en 1.",
+        "operationId": "getUsers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número de página (mínimo 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Tamaño de la página (mínimo 1, máximo 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Parámetros de paginación inválidos",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedUserResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Lista de usuarios obtenida exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Usuarios"],
+        "summary": "Registrar nuevo usuario",
+        "description": "Crea un nuevo usuario en el sistema. Retorna el usuario creado junto con la ubicación del recurso.",
+        "operationId": "registerUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRegistration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },"400": {
+            "description": "Errores de validación en los datos de entrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                  }
+                },
+                "examples": {
+                  "erroresValidacion": {
+                    "summary": "Errores de validación de email y nombre",
+                    "value": [
+                      {
+                        "field": "email",
+                        "error": "El email debe tener un formato válido"
+                      },
+                      {
+                        "field": "name",
+                        "error": "El nombre debe tener al menos 5 caracteres"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableError"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}/account_status": {
+      "patch": {
+        "tags": ["Usuarios"],
+        "summary": "Actualizar estado de cuenta",
+        "description": "Cambia el estado de un usuario de `PENDING_VALIDATION` a `VERIFIED`. Solo se permite si el usuario existe y está en estado `PENDING_VALIDATION`.",
+        "operationId": "updateAccountStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identificador único del usuario cuyo estado se actualizará (debe ser mayor a 0).",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 101
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado de cuenta actualizado correctamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatusResponse"
+                },
+                "examples": {
+                  "verificado": {
+                    "summary": "Usuario verificado exitosamente",
+                    "value": {
+                      "account_status": "VERIFIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Solicitud inválida (por ejemplo, ID no válido o usuario no está en estado `PENDING_VALIDATION`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "idInvalido": {
+                    "summary": "El ID proporcionado no es válido",
+                    "value": {
+                      "status": 400,
+                      "message": "El ID debe ser un entero positivo mayor que 0",
+                      "timestamp": "2025-09-07T15:35:00Z"
+                    }
+                  },
+                  "estadoInvalido": {
+                    "summary": "Usuario no está en estado pendiente de validación",
+                    "value": {
+                      "status": 400,
+                      "message": "El usuario ya está verificado o se encuentra eliminado.",
+                      "timestamp": "2025-09-07T15:36:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/UserNotFoundError"
+          },
+          "500": {
+            "description": "Error al comunicarse con el servicio de usuarios.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "servicioExterno": {
+                    "summary": "Error del servicio externo",
+                    "value": {
+                      "status": 500,
+                      "message": "Error al comunicarse con el servicio de usuarios: timeout",
+                      "timestamp": "2025-09-07T15:37:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableError"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}/password": {
+      "patch": {
+        "security": [],
+        "tags": ["Usuarios"],
+        "summary": "Recuperar contraseña",
+        "description": "Valida el código OTP enviado al correo y permite restablecer la contraseña del usuario.",
+        "operationId": "recoverPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordRecoveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identificador único del usuario",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 101
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "OTP inválido o expirado || contraseña no cumple el formato válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/ErrorResponse" },
+                    {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ValidationErrorResponse" }
+                    }
+                  ]
+                },
+                "examples": {
+                  "otpInvalido": {
+                    "summary": "OTP incorrecto o vencido",
+                    "value": {
+                      "status": 400,
+                      "message": "El código OTP es inválido o ha expirado",
+                      "timestamp": "2025-09-07T15:30:00Z"
+                    }
+                  },
+                  "erroresValidacion": {
+                    "summary": "Errores en formato de contraseña",
+                    "value": [
+                      {
+                        "field": "newPassword",
+                        "error": "La contraseña debe tener al menos 8 caracteres"
+                      },
+                      {
+                        "field": "newPassword",
+                        "error": "La contraseña debe contener un número"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/UserNotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableError"
+          },
+          "200": {
+            "description": "Contraseña actualizada correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "Contraseña actualizada correctamente"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/otp": {
+      "post": {
+        "security": [],
+        "tags": ["Autenticación"],
+        "summary": "Generar OTP",
+        "description": "Genera un código de un solo uso (OTP) y lo envía al correo del usuario.",
+        "operationId": "requestOtp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "404": {
+            "$ref": "#/components/responses/UserNotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableError"
+          },
+          "200": {
+            "description": "OTP generado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OtpResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "security": [],
+        "tags": ["Autenticación"],
+        "summary": "Iniciar sesión",
+        "description": "Permite autenticar un usuario con email y contraseña. Devuelve un token JWT si las credenciales son correctas.",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Login exitoso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Contraseña incorrecta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "passwordIncorrecta": {
+                    "summary": "La contraseña no coincide con la actual",
+                    "value": {
+                      "status": 400,
+                      "message": "La contraseña actual proporcionada es incorrecta",
+                      "timestamp": "2025-09-07T16:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/UserNotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailableError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountStatusResponse": {
+        "type": "object",
+        "description": "Respuesta con el estado de la cuenta del usuario tras la verificación",
+        "properties": {
+          "account_status": {
+            "type": "string",
+            "description": "Estado actual de la cuenta",
+            "enum": ["PENDING_VALIDATION", "VERIFIED", "DELETED"],
+            "example": "VERIFIED"
+          }
+        },
+        "required": ["account_status"]
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "description": "Solicitud para actualizar la información de un usuario",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Nuevo correo electrónico del usuario",
+            "example": "usuario_actualizado@ejemplo.com",
+            "maxLength": 50,
+            "minLength": 8
+          },
+          "name": {
+            "type": "string",
+            "description": "Nuevo nombre completo del usuario",
+            "example": "Andrés Rendón Actualizado",
+            "maxLength": 50,
+            "minLength": 2
+          }
+        },
+        "required": ["email", "name"]
+      },
+      "UserResponse": {
+        "type": "object",
+        "description": "Respuesta con la información básica de un usuario",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Identificador único del usuario",
+            "example": 101
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre completo del usuario",
+            "example": "Andrés Felipe Rendón"
+          },
+          "email": {
+            "type": "string",
+            "description": "Correo electrónico del usuario",
+            "example": "usuario@ejemplo.com"
+          }
+        }
+      },
+      "UserRegistration": {
+        "type": "object",
+        "description": "Solicitud para registrar un nuevo usuario en el sistema",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Correo electrónico único del usuario",
+            "example": "usuario@ejemplo.com",
+            "maxLength": 50,
+            "minLength": 8
+          },
+          "password": {
+            "type": "string",
+            "description": "Contraseña del usuario (debe incluir mayúscula, minúscula y un dígito)",
+            "example": "Passw0rd2025",
+            "maxLength": 50,
+            "minLength": 8,
+            "pattern": "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).*$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre completo del usuario",
+            "example": "Andrés Felipe Rendón",
+            "maxLength": 50,
+            "minLength": 8
+          },
+          "phone": {
+            "type": "string",
+            "description": "Telefono del usuario",
+            "example": "3101110000",
+            "maxLength": 50,
+            "minLength": 8
+          }
+        },
+        "required": ["email", "name", "password", "phone"]
+      },
+      "PasswordRecoveryRequest": {
+        "type": "object",
+        "description": "Solicitud para recuperar contraseña mediante OTP",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Correo electrónico del usuario asociado a la cuenta",
+            "example": "usuario@ejemplo.com",
+            "maxLength": 50,
+            "minLength": 8
+          },
+          "otp": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Código OTP de 6 dígitos enviado al correo electrónico",
+            "example": 493820
+          },
+          "password": {
+            "type": "string",
+            "description": "Nueva contraseña que debe cumplir las reglas de seguridad",
+            "example": "Nuev0Pass2025",
+            "maxLength": 50,
+            "minLength": 8,
+            "pattern": "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).*$"
+          }
+        },
+        "required": ["email", "otp", "password"]
+      },
+      "OtpRequest": {
+        "type": "object",
+        "description": "Solicitud de generación/envío de un código OTP a un correo electrónico",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Correo electrónico al cual se enviará el código OTP",
+            "example": "usuario@ejemplo.com",
+            "maxLength": 50,
+            "minLength": 8
+          }
+        },
+        "required": ["email"]
+      },
+      "OtpResponse": {
+        "type": "object",
+        "description": "Respuesta con la información del código OTP generado",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Identificador único del OTP en la base de datos",
+            "example": 101
+          },
+          "otp": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Código OTP generado de 6 dígitos",
+            "example": 482915,
+            "maxLength": 6,
+            "minLength": 6
+          },
+          "user_id": {
+            "type": "integer",
+            "format": "int32",
+            "description": "ID del usuario al que pertenece el OTP",
+            "example": 42
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha y hora en que se creó el OTP",
+            "example": "2025-09-04T14:32:00.000+00:00"
+          },
+          "otp_status": {
+            "type": "string",
+            "description": "Estado actual del OTP (ejemplo: PENDING, USED, EXPIRED)",
+            "example": "PENDING"
+          },
+          "url": {
+            "type": "string",
+            "description": "url de recuperacion de contraseña",
+            "example": "localhost:8080/api/v1/users/1/password"
+          }
+        },
+        "required": ["created_at", "otp", "otp_status", "user_id"]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "description": "DTO que representa las credenciales para iniciar sesión en el sistema",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Correo electrónico del usuario",
+            "example": "usuario@ejemplo.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "Contraseña de la cuenta del usuario",
+            "example": "Passw0rd2025"
+          }
+        },
+        "required": ["email", "password"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["status", "message", "timestamp"]
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "description": "Error de validación en un campo específico",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "Nombre del campo con error",
+            "example": "email"
+          },
+          "error": {
+            "type": "string",
+            "description": "Mensaje de error asociado al campo",
+            "example": "El email debe tener un formato válido"
+          }
+        },
+        "required": ["field", "error"]
+      },
+      "PaginatedUserResponse": {
+        "type": "object",
+        "description": "Respuesta paginada con metadatos y lista de usuarios",
+        "properties": {
+          "totalItems": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Número total de usuarios disponibles en el sistema",
+            "example": 125
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Número total de páginas calculadas según el tamaño de página",
+            "example": 13
+          },
+          "currentPage": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Número de la página actual (comienza en 1)",
+            "example": 2
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Cantidad de elementos devueltos por página",
+            "example": 10
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserResponse"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Token inválido o ausente",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "tokenInvalido": {
+                "summary": "Token inválido",
+                "value": {
+                  "status": 401,
+                  "message": "El token proporcionado no es válido",
+                  "timestamp": "2025-09-07T15:30:00Z"
+                }
+              },
+              "tokenFaltante": {
+                "summary": "Token faltante",
+                "value": {
+                  "status": 401,
+                  "message": "No se proporcionó un token de autorización",
+                  "timestamp": "2025-09-07T15:31:00Z"
+                }
+              }
+            }
+          }
+        }
+      }, "UserNotFoundError": {
+        "description": "Usuario no encontrado",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "usuarioNoEncontrado": {
+                "summary": "Usuario con ID inexistente",
+                "value": {
+                  "status": 404,
+                  "message": "Usuario con ID 101 no encontrado",
+                  "timestamp": "2025-09-07T14:30:00Z"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ConflictError": {
+        "description": "Conflicto en la operación (ej. email ya existe)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "emailDuplicado": {
+                "summary": "El email ya existe",
+                "value": {
+                  "status": 409,
+                  "message": "El correo usuario@ejemplo.com ya está registrado",
+                  "timestamp": "2025-09-07T14:35:00Z"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "El usuario no tiene permisos para modificar este recurso",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "sinPermisos": {
+                "summary": "Acceso denegado",
+                "value": {
+                  "status": 403,
+                  "message": "No tienes permisos para modificar este recurso",
+                  "timestamp": "2025-09-07T15:32:00Z"
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Error inesperado en el servidor",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "errorInterno": {
+                "summary": "Error genérico del servidor",
+                "value": {
+                  "status": 500,
+                  "message": "Se produjo un error interno en el servidor",
+                  "timestamp": "2025-09-07T15:33:00Z"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ServiceUnavailableError": {
+        "description": "Error al comunicarse con el servicio de datos",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "examples": {
+              "servicioCaido": {
+                "summary": "Servicio no disponible",
+                "value": {
+                  "status": 503,
+                  "message": "No se pudo comunicar con el servicio de datos",
+                  "timestamp": "2025-09-07T15:34:00Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer Authentication": {
+        "type": "http",
+        "name": "Authorization",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
