@@ -1,8 +1,9 @@
 package com.uniquindio.userservice.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
 import java.sql.Timestamp;
 
 /**
@@ -24,8 +25,9 @@ public record OtpResponse(
                 example = "482915"
         )
         @NotNull(message = "El otp es obligatorio")
-        @Size(min = 6, max = 6, message = "El otp debe tener 6 dígitos")
-        String otp,
+        @Min(value = 100000, message = "El otp debe tener 6 dígitos")
+        @Max(value = 999999, message = "El otp debe tener 6 dígitos")
+        int otp,
 
         @Schema(
                 description = "ID del usuario al que pertenece el OTP",
