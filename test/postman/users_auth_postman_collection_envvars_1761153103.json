@@ -1,0 +1,938 @@
+{
+  "info": {
+    "name": "Users and Auth API Test Suite",
+    "_postman_id": "users-auth-suite-1761152803",
+    "description": "Colección generada automáticamente: 9 endpoints x 3 tests cada uno. Variables y scripts para ejecución automática.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Users/01 - Create User - Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{user_email}}\", \"password\": \"{{user_password}}\", \"name\": \"{{user_name}}\", \"phone\": \"{{user_phone}}\"}"
+        },
+        "description": "Crea usuario y guarda user_id automáticamente."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// ensure unique email for the run if not already set",
+              "if(!pm.environment.get('user_email')) { pm.environment.set('user_email','testuser' + Date.now() + '@example.com'); }",
+              "pm.environment.set('user_password', pm.environment.get('user_password') || 'Passw0rd2025');",
+              "pm.environment.set('user_name', pm.environment.get('user_name') || 'Andrés Felipe Rendón');",
+              "pm.environment.set('user_phone', pm.environment.get('user_phone') || '3101110000');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Status is 201', function(){ pm.expect(pm.response.code).to.eql(201); });",
+              "pm.test('Response has id, name, email', function(){ pm.expect(json).to.have.property('id'); pm.expect(json).to.have.property('name'); pm.expect(json).to.have.property('email'); });",
+              "if (json && json.id) { pm.environment.set('user_id', json.id.toString()); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/02 - Create User - Invalid Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"invalid-email\", \"password\": \"short\", \"name\": \"\", \"phone\": \"abc\"}"
+        },
+        "description": "Envía email inválido y espera 400."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 400', function(){ pm.expect(pm.response.code).to.eql(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/03 - Create User - Duplicate Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{user_email}}\", \"password\": \"{{user_password}}\", \"name\": \"{{user_name}}\", \"phone\": \"{{user_phone}}\"}"
+        },
+        "description": "Intenta crear usuario con email ya usado; espera 409."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 409', function(){ pm.expect(pm.response.code).to.eql(409); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/04 - Get Users - Paginated - Success",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users?page=1&size=10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users?page=1&size=10"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function(){ pm.expect(pm.response.code).to.eql(200); });",
+              "const j = pm.response.json(); pm.test('Has users array or data', function(){ pm.expect(j).to.satisfy(function(resp){ return Array.isArray(resp) || resp.data; }); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/05 - Get Users - Page Out Of Range",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users?page=9999&size=10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users?page=9999&size=10"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404 or 200 with empty set', function(){ pm.expect([200,404]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/06 - Get Users - Invalid Params",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users?page=abc&size=-1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users?page=abc&size=-1"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 400', function(){ pm.expect(pm.response.code).to.eql(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/07 - Get User By ID - Success",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('user_id variable exists', function(){ pm.expect(pm.environment.get('user_id')).to.be.ok; });",
+              "pm.test('Status is 200', function(){ pm.expect(pm.response.code).to.eql(200); });",
+              "const j = pm.response.json(); pm.test('Has email and name', function(){ pm.expect(j).to.have.property('email'); pm.expect(j).to.have.property('name'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/08 - Get User By ID - Not Found",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/999999",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "999999"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', function(){ pm.expect(pm.response.code).to.eql(404); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/09 - Get User By ID - Invalid ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/abc",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "abc"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 400', function(){ pm.expect(pm.response.code).to.eql(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/10 - Update User (PUT) - Success",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"usuario_actualizado@ejemplo.com\", \"name\": \"Andrés Rendón Actualizado\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function(){ pm.expect(pm.response.code).to.eql(200); });",
+              "const j = pm.response.json(); pm.test('Updated email/name match', function(){ pm.expect(j.email).to.eql('usuario_actualizado@ejemplo.com'); pm.expect(j.name).to.eql('Andrés Rendón Actualizado'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/11 - Update User (PUT) - Not Found",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/999999",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "999999"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"usuario_actualizado@ejemplo.com\", \"name\": \"Andrés Rendón Actualizado\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', function(){ pm.expect(pm.response.code).to.eql(404); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/12 - Update User (PUT) - Invalid Data",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 400', function(){ pm.expect(pm.response.code).to.eql(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/13 - Patch Account Status - Success",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{{user_id}}/account_status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}",
+            "account_status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function(){ pm.expect(pm.response.code).to.eql(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/14 - Patch Account Status - Not Found",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/999999/account_status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "999999",
+            "account_status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', function(){ pm.expect(pm.response.code).to.eql(404); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/15 - Patch Account Status - Invalid ID",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/abc/account_status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "abc",
+            "account_status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 400', function(){ pm.expect(pm.response.code).to.eql(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth/01 - Generate OTP - For Password Reset",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/otp",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "otp"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{user_email}}\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function(){ pm.expect(pm.response.code).to.eql(200); });",
+              "try { const j = pm.response.json(); if (j.otp) { pm.environment.set('otp', j.otp.toString()); } } catch(e) {}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/16 - Patch Password - Success",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{{user_id}}/password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}",
+            "password"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{user_email}}\", \"otp\": \"{{otp}}\", \"password\": \"Nuev0Pass2025\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function(){ pm.expect(pm.response.code).to.eql(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/17 - Patch Password - Invalid OTP",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{{user_id}}/password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}",
+            "password"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{user_email}}\", \"otp\": \"000000\", \"password\": \"x\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 401', function(){ pm.expect(pm.response.code).to.eql(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/18 - Patch Password - User Not Found",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/999999/password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "999999",
+            "password"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"noexiste@example.com\", \"otp\": \"123456\", \"password\": \"x\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', function(){ pm.expect(pm.response.code).to.eql(404); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/19 - Delete User - Success",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{{user_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{user_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function(){ pm.expect(pm.response.code).to.eql(200); });",
+              "// Clear user_id after delete",
+              "pm.environment.unset('user_id');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/20 - Delete User - Not Found",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/999999",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "999999"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', function(){ pm.expect(pm.response.code).to.eql(404); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users/21 - Delete User - Invalid ID",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/abc",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "abc"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 400', function(){ pm.expect(pm.response.code).to.eql(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth/02 - Login - Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{user_email}}\", \"password\": \"{{user_password}}\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function(){ pm.expect(pm.response.code).to.eql(200); });",
+              "try { const j = pm.response.json(); if (j.token) { pm.environment.set('auth_token', j.token); } } catch(e) {}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth/03 - Login - Wrong Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"{{user_email}}\", \"password\": \"wrongpass\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 401', function(){ pm.expect(pm.response.code).to.eql(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth/04 - Login - User Not Found",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"noexiste@example.com\", \"password\": \"x\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', function(){ pm.expect(pm.response.code).to.eql(404); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
