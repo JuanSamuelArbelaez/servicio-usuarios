@@ -40,7 +40,8 @@ public class SecurityConfig {
                                 "/v3/api-docs.yaml",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/openapi.json")
+                                "/openapi.json",
+                                "/actuator/health")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/v1/users").permitAll()
                         .anyRequest().authenticated()
