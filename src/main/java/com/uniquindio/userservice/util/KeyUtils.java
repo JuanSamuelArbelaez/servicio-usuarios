@@ -37,8 +37,8 @@ public class KeyUtils {
 
 // Si no están en el contenedor, usar rutas locales
             if (pubPath == null || privPath == null) {
-                pubPath = "C:/Users/MI PC/Desktop/MicroServicios/Taller1_microservicios/keys/public-key.pem";
-                privPath = "C:/Users/MI PC/Desktop/MicroServicios/Taller1_microservicios/keys/private-key.pem";
+                pubPath = "C:/Users/Samuel/IdeaProjects/Taller1_microservicios/keys/public-key.pem";
+                privPath = "C:/Users/Samuel/IdeaProjects/Taller1_microservicios/keys/private-key.pem";
                 System.out.println("⚠️ Variables no encontradas, usando rutas locales: " + pubPath + " y " + privPath);
             }
 
