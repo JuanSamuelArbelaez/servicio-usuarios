@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,9 +23,33 @@ public class HealthController {
     public ResponseEntity<Map<String, Object>> health() {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "UP");
-        response.put("version", VERSION);
-
+        
+        List<Map<String, Object>> checks = new ArrayList<>();
+        
+        // Readiness check
+        Map<String, Object> readinessCheck = new HashMap<>();
+        Map<String, Object> readinessData = new HashMap<>();
+        readinessData.put("from", START_TIME.toString());
+        readinessData.put("status", "READY");
+        readinessCheck.put("data", readinessData);
+        readinessCheck.put("name", "Readiness check");
+        readinessCheck.put("status", "UP");
+        checks.add(readinessCheck);
+        
+        // Liveness check
+        Map<String, Object> livenessCheck = new HashMap<>();
+        Map<String, Object> livenessData = new HashMap<>();
+        livenessData.put("from", START_TIME.toString());
+        livenessData.put("status", "ALIVE");
+        livenessCheck.put("data", livenessData);
+        livenessCheck.put("name", "Liveness check");
+        livenessCheck.put("status", "UP");
+        checks.add(livenessCheck);
+        
+        response.put("checks", checks);
+        
         Duration uptime = Duration.between(START_TIME, Instant.now());
+        response.put("version", VERSION);
         response.put("uptime", formatUptime(uptime));
         response.put("uptimeSeconds", uptime.getSeconds());
 
